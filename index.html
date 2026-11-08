@@ -83,8 +83,8 @@ body.edit .pad.has{outline:4px dashed #fff;outline-offset:-6px;animation:wig .35
 #edc{flex:1;min-height:40vh;width:100%;border-radius:26px;border:4px solid #fff;background:#0b0820;touch-action:none}
 #edi{text-align:center;font-size:17px;opacity:.95}
 .edb{display:flex;gap:8px}
-.edb button{flex:1;height:58px;border-radius:20px;border:4px solid #fff;font-size:17px;line-height:1.1;box-shadow:0 5px 0 rgba(0,0,0,.3);padding:0 4px}
-#ecrop{background:#ff9f1c;color:#222}#eund{background:#9b5de5}
+.edb button{flex:1;font-size:16px!important;height:58px;border-radius:20px;border:4px solid #fff;font-size:17px;line-height:1.1;box-shadow:0 5px 0 rgba(0,0,0,.3);padding:0 4px}
+#erev{background:#4895ef}#ecrop{background:#ff9f1c;color:#222}#eund{background:#9b5de5}
 #pv{text-align:center;font-size:20px;line-height:1.1}
 .pit{display:flex;align-items:center;gap:8px}
 .pit button{width:48px;height:48px;border-radius:50%;border:4px solid #fff;background:#9b5de5;font-size:24px;padding:0;box-shadow:0 4px 0 rgba(0,0,0,.3);flex:none}
@@ -141,15 +141,15 @@ body.edit .pad.has{outline:4px dashed #fff;outline-offset:-6px;animation:wig .35
  <div id="edi"></div>
  <div id="pv"></div>
  <div class="pit"><button id="pm">−</button><input type="range" id="pr" min="-12" max="12" step="1" value="0"><button id="pp">+</button><button id="pz">0</button></div>
- <div class="edb"><button id="edp">▶<br>Oír</button><button id="ecrop">✂️<br>Recortar</button><button id="eund">↩<br>Deshacer</button><button id="edr">↺<br>Puntos</button></div>
- <div class="edb"><button id="edd">🗑️<br>Borrar pad</button><button id="edok">✅<br>Listo</button></div>
+ <div class="edb"><button id="edp">▶<br>Oír</button><button id="erev">⏪<br>Al revés</button><button id="ecrop">✂️<br>Recortar</button><button id="eund">↩<br>Deshacer</button></div>
+ <div class="edb"><button id="edr">↺<br>Puntos</button><button id="edd">🗑️<br>Borrar pad</button><button id="edok">✅<br>Listo</button></div>
 </div>
 
 <div id="start">
  <div class="logo"><b>P</b><b>o</b><b>p</b><b>!</b><b>P</b><b>a</b><b>d</b><b>s</b></div>
  <button id="s1">🎤 ¡EMPEZAR!</button>
  <button id="s2">🥁 Probar con sonidos</button>
- <p style="opacity:.7;font-size:12px">v1.2</p>
+ <p style="opacity:.7;font-size:12px">v1.3</p>
  <p>Mantén un pad vacío pulsado para grabar tu voz. ¡Suéltalo para parar!</p>
 </div>
 <div id="toast"></div>
@@ -161,7 +161,7 @@ const COL=['#ff4d6d','#ff9f1c','#ffd60a','#4cd964','#2ec4b6','#4895ef','#9b5de5'
 const EMO=['🐶','🐱','🐸','🦁','🐵','🐼','🐙','🦄','🚀','🌈','⭐','🍕','🎈','🐢','🦖','🍩'];
 const EMO2=['🦊','🐰','🐷','🐮','🦆','🐞','🦋','🐳','🚗','🚒','🍎','🍦','🎸','🥁','🎺','🧸'];
 const TC=['#ff4d6d','#ffd60a','#4cd964','#4cc9f0'];
-const pads=Array.from({length:32},(_,i)=>({buf:null,s:0,e:1,pitch:0,c:COL[(i+(i>15?8:0))%16],em:i<16?EMO[i]:EMO2[i-16]}));
+const pads=Array.from({length:32},(_,i)=>({buf:null,s:0,e:1,pitch:0,vol:1,c:COL[(i+(i>15?8:0))%16],em:i<16?EMO[i]:EMO2[i-16]}));
 const MT={on:false,pre:100,mt0:0,h:0};
 const LP={L:0,n:0,bpm:0,tr:[[],[],[],[]],mute:[0,0,0,0],sel:0,st:'idle',play:false,od:false,t0:0,tr0:0,sched:0,grid:4,magnet:true};
 
@@ -200,9 +200,9 @@ const fin=document.createElement('input');fin.type='file';fin.accept='audio/*';f
 fin.onchange=async()=>{const f=fin.files[0],i=fpad;fin.value='';if(!f||i<0)return;
  try{const b=await ctx.decodeAudioData(await f.arrayBuffer());const p=pads[i];p.buf=b;p.s=0;p.e=1;renderBank();flash(i);playPad(i)}catch(e){toast('No pude leer ese audio 😢')}};
 function playPad(i,when,vel){
- const p=pads[i];if(!p.buf)return;const w=Math.max(when||0,ctx.currentTime),d=p.buf.duration,r=Math.pow(2,(p.pitch||0)/12),len=Math.max(.02,(p.e-p.s)*d)/r;
- const s=ctx.createBufferSource();s.buffer=p.buf;s.playbackRate.value=r;const g=ctx.createGain();g.gain.setValueAtTime(vel||1,w);
- g.gain.setValueAtTime(vel||1,w+Math.max(0,len-.012));g.gain.linearRampToValueAtTime(0,w+len);
+ const p=pads[i];if(!p.buf)return;const w=Math.max(when||0,ctx.currentTime),d=p.buf.duration,r=Math.pow(2,(p.pitch||0)/12),len=Math.max(.02,(p.e-p.s)*d)/r,v=(vel||1)*(p.vol==null?1:p.vol);
+ const s=ctx.createBufferSource();s.buffer=p.buf;s.playbackRate.value=r;const g=ctx.createGain();g.gain.setValueAtTime(v,w);
+ g.gain.setValueAtTime(v,w+Math.max(0,len-.012));g.gain.linearRampToValueAtTime(0,w+len);
  s.connect(g);g.connect(master);s.start(w,p.s*d);s.stop(w+len+.01);
 }
 function mkBuf(dur,fn){const sr=ctx.sampleRate,n=sr*dur|0,b=ctx.createBuffer(1,n,sr),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=fn(i/sr,i);return b}
@@ -405,28 +405,33 @@ function sizeEd(){
 function drawEd(ph){
  if(!ed)return;const c=$('#edc'),g=c.getContext('2d'),W=c.width,H=c.height,p=pads[ed.i],d=ed.d,sx=p.s*W,ex=p.e*W;
  g.clearRect(0,0,W,H);
- for(let x=0;x<W;x++){const mn=ed.pk[2*x],mx=ed.pk[2*x+1],y1=H/2-mx*H*.46,y2=H/2-mn*H*.46;
+ for(let x=0;x<W;x++){const k=p.vol,mn=Math.max(-1,Math.min(1,ed.pk[2*x]*k)),mx=Math.max(-1,Math.min(1,ed.pk[2*x+1]*k)),y1=H/2-mx*H*.46,y2=H/2-mn*H*.46;
   g.fillStyle=(x>=sx&&x<=ex)?p.c:'rgba(255,255,255,.2)';g.fillRect(x,y1,1.4,Math.max(1.5,y2-y1))}
  g.fillStyle='rgba(0,0,0,.5)';g.fillRect(0,0,sx,H);g.fillRect(ex,0,W-ex,H);
  const knob=(x,y,col,t)=>{g.fillStyle=col;g.fillRect(x-3*d,0,6*d,H);g.beginPath();g.arc(x,y,24*d,0,7);g.fill();g.lineWidth=4*d;g.strokeStyle='#fff';g.stroke();
   g.fillStyle='#fff';g.font='bold '+(22*d)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,x,y+1*d)};
  knob(sx,H*.2,'#4cd964','▶');knob(ex,H*.8,'#ff4d6d','■');
  if(ph!=null){const x=ph*W;g.fillStyle='#fff';g.fillRect(x-2*d,0,4*d,H)}
+ if(ed.drag==='v'){g.fillStyle='rgba(255,255,255,.9)';g.font='bold '+(60*d)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🔊 '+Math.round(p.vol*100)+'%',W/2,H/2)}
 }
-function info(){const p=pads[ed.i],d=p.buf.duration;$('#edi').textContent='Inicio '+(p.s*d).toFixed(2)+' s  ·  Fin '+(p.e*d).toFixed(2)+' s  ·  Dura '+((p.e-p.s)*d).toFixed(2)+' s'}
+function info(){const p=pads[ed.i],d=p.buf.duration;$('#edi').innerHTML='Inicio '+(p.s*d).toFixed(2)+' s  ·  Fin '+(p.e*d).toFixed(2)+' s  ·  Dura '+((p.e-p.s)*d).toFixed(2)+' s<br><span style="font-size:13px;opacity:.8">↕ Desliza sobre la onda para cambiar el volumen</span>'}
 (function(){
  const c=$('#edc');
  const mv=e=>{const r=c.getBoundingClientRect(),x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),p=pads[ed.i];
   if(ed.drag==='s')p.s=Math.min(x,p.e-.02);else p.e=Math.max(x,p.s+.02);ed.pl=null;drawEd();info()};
  c.addEventListener('pointerdown',e=>{if(!ed)return;e.preventDefault();c.setPointerCapture(e.pointerId);
-  const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height,p=pads[ed.i],ds=Math.abs(x-p.s),de=Math.abs(x-p.e);
-  ed.drag=Math.abs(ds-de)<.04?(y<.5?'s':'e'):(ds<de?'s':'e');mv(e)});
- c.addEventListener('pointermove',e=>{if(ed&&ed.drag)mv(e)});
- const up=()=>{if(ed)ed.drag=null};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+  const r=c.getBoundingClientRect(),px=e.clientX-r.left,y=(e.clientY-r.top)/r.height,p=pads[ed.i],hs=Math.abs(px-p.s*r.width),he=Math.abs(px-p.e*r.width);
+  if(Math.min(hs,he)<44){ed.drag=Math.abs(hs-he)<8?(y<.5?'s':'e'):(hs<he?'s':'e');mv(e)}
+  else{ed.drag='v';ed.vy=e.clientY;ed.v0=p.vol;ed.vch=false}});
+ c.addEventListener('pointermove',e=>{if(!ed||!ed.drag)return;
+  if(ed.drag==='v'){const r=c.getBoundingClientRect(),p=pads[ed.i];p.vol=Math.max(0,Math.min(2,ed.v0+(ed.vy-e.clientY)/r.height*2.2));ed.vch=true;drawEd();showPitch()}
+  else mv(e)});
+ const up=()=>{if(!ed)return;const v=ed.drag==='v'&&ed.vch;ed.drag=null;if(v){drawEd();prev()}else drawEd()};
+ c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
 })();
 function closeEd(){if(ed)pads[ed.i].undo=null;ed=null;$('#ed').classList.remove('on');renderBank()}
 function prev(){const p=pads[ed.i];playPad(ed.i);ed.pl={t0:ctx.currentTime,r:Math.pow(2,p.pitch/12)}}
-function showPitch(){const p=pads[ed.i];$('#pr').value=p.pitch;$('#pv').textContent='🎵 Tono: '+(p.pitch>0?'+':'')+p.pitch+(p.pitch?(p.pitch>0?'  ⬆ más agudo':'  ⬇ más grave'):'')}
+function showPitch(){const p=pads[ed.i];$('#pr').value=p.pitch;$('#pv').textContent='🎵 Tono: '+(p.pitch>0?'+':'')+p.pitch+(p.pitch?(p.pitch>0?' ⬆':' ⬇'):'')+'    🔊 Vol: '+Math.round(p.vol*100)+'%'}
 function setPitch(v,pl){const p=pads[ed.i];p.pitch=Math.max(-12,Math.min(12,Math.round(v)));showPitch();if(pl)prev()}
 function undoVis(){$('#eund').style.display=pads[ed.i].undo?'':'none'}
 function cropPad(){
@@ -437,13 +442,18 @@ function cropPad(){
  for(let c=0;c<b.numberOfChannels;c++){const d=nb.getChannelData(c);d.set(b.getChannelData(c).subarray(a,z));for(let k=0;k<f;k++){d[k]*=k/f;d[n-1-k]*=k/f}}
  p.undo={buf:b,s:p.s,e:p.e};p.buf=nb;p.s=0;p.e=1;ed.pl=null;sizeEd();drawEd();info();undoVis();toast('¡Recortado! ✂️')
 }
+function revPad(){
+ const p=pads[ed.i],b=p.buf;for(let c=0;c<b.numberOfChannels;c++)b.getChannelData(c).reverse();
+ const s0=p.s;p.s=1-p.e;p.e=1-s0;ed.pl=null;sizeEd();drawEd();info();prev();
+}
+$('#erev').onclick=revPad;
 $('#edp').onclick=prev;
 $('#ecrop').onclick=cropPad;
 $('#eund').onclick=()=>{const p=pads[ed.i];if(!p.undo)return;p.buf=p.undo.buf;p.s=p.undo.s;p.e=p.undo.e;p.undo=null;ed.pl=null;sizeEd();drawEd();info();undoVis();toast('Deshecho ↩')};
 $('#pm').onclick=()=>setPitch(pads[ed.i].pitch-1,true);$('#pp').onclick=()=>setPitch(pads[ed.i].pitch+1,true);$('#pz').onclick=()=>setPitch(0,true);
 $('#pr').oninput=e=>setPitch(+e.target.value,false);$('#pr').onchange=e=>{setPitch(+e.target.value,true)};
 $('#edr').onclick=()=>{const p=pads[ed.i];p.s=0;p.e=1;drawEd();info()};
-$('#edd').onclick=function(){arm(this,'¿Seguro?<br>🗑️ Sí',()=>{const i=ed.i;pads[i].buf=null;pads[i].s=0;pads[i].e=1;pads[i].pitch=0;pads[i].undo=null;
+$('#edd').onclick=function(){arm(this,'¿Seguro?<br>🗑️ Sí',()=>{const i=ed.i;pads[i].buf=null;pads[i].s=0;pads[i].e=1;pads[i].pitch=0;pads[i].vol=1;pads[i].undo=null;
  LP.tr.forEach((t,k)=>LP.tr[k]=t.filter(e=>e.pad!==i));closeEd();renderLanes();toast('Pad vacío otra vez ✨')})};
 $('#edok').onclick=closeEd;
 addEventListener('resize',()=>{if(ed){sizeEd();drawEd()}});
