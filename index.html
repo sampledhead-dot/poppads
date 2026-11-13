@@ -226,7 +226,7 @@ body.edit .pad.has{outline:4px dashed #fff;outline-offset:-6px;animation:wig .35
  <div class="by">by SampledHead</div>
  <button id="s1">🎤 ¡EMPEZAR!</button>
  <button id="s2">🥁 Probar con sonidos</button>
- <p style="opacity:.7;font-size:12px">v1.11</p>
+ <p style="opacity:.7;font-size:12px">v1.12</p>
  <p>Mantén un pad vacío pulsado para grabar tu voz. ¡Suéltalo para parar!</p>
 </div>
 <div id="toast"></div>
@@ -576,10 +576,12 @@ function release(){
 function trimSil(x,sr){
  let pk=0;for(let k=0;k<x.length;k++){const v=Math.abs(x[k]);if(v>pk)pk=v}
  if(pk<.003)return null;
- const th=Math.max(.012,pk*.1),te=Math.max(.006,pk*.035);let a=0,z=x.length-1;
- while(a<x.length&&Math.abs(x[a])<th)a++;while(z>a&&Math.abs(x[z])<te)z--;
- a=Math.max(0,a-Math.floor(sr*.004));z=Math.min(x.length,z+Math.floor(sr*.08));
- return {a,z,pk};
+ /* sólo se recorta el silencio del INICIO; el resto (pausas y final) se deja tal cual */
+ const bl=Math.max(1,Math.floor(sr*.005)),br=[];for(let k=0;k+bl<=Math.min(x.length,sr*.06);k+=bl){let q=0;for(let j=k;j<k+bl;j++)q+=x[j]*x[j];br.push(Math.sqrt(q/bl))}
+ const noise=br.length?Math.min(...br):0,th=Math.max(.008,noise*4,pk*.04);
+ let a=0;while(a<x.length&&Math.abs(x[a])<th)a++;
+ a=Math.max(0,a-Math.floor(sr*.015));
+ return {a,z:x.length,pk};
 }
 function finishRec(i,held){
  let n=0;chunks.forEach(c=>n+=c.length);
