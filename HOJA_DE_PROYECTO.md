@@ -13,6 +13,26 @@ rejilla, swing, metrónomo y deshacer. Disponible en web y en las versiones de W
   **4 sonidos**: Bajo, Piano, Teclado eléctrico y 8 bits, y botones Grave / Agudo (octavas 1–6; cada sonido recuerda la suya).
   Se puede **deslizar el dedo** por las teclas. Las notas se graban en el looper como cualquier pad y recuerdan su sonido.
 
+## Mezclador 🎚️ (v1.14)
+Botón 🎚️ en la cabecera (al tocar A, B o C se vuelve a los pads). Mientras está abierto, el looper sigue funcionando debajo.
+- **4 canales**: A ☀️, B 🌙, C 🎹 (teclado) y Máster ⭐. Cada uno tiene un fader grande con cara que cambia con el volumen (🤫 🙂 😊 😃 🤩), de 0 a 130 %. Doble toque en el fader lo pone al 100 %. Cada canal tiene medidor de nivel (verde, amarillo y rojo), 🔊/🔇 (silencio) y 🎧 (solo; se pueden juntar varios). En el máster, ↺ pone todo al 100 %.
+- **3 pads de efectos táctiles** (como los de SampledHead App, simplificados): suenan mientras se mantienen pulsados; con 📌 se quedan puestos.
+  - 🌊 **Filtro**: a la izquierda «🐻 Grave» (paso bajo), a la derecha «🐭 Agudo» (paso alto); hacia arriba, más «silbido» (resonancia).
+  - 🏔️ **Eco** (delay estéreo de ida y vuelta al tempo): de izquierda a derecha lento 🐢 1/4, saltarín 🐸 1/8 con puntillo, rápido 🐇 1/8 y súper rápido ⚡ 1/16; hacia arriba, más eco. Al soltar, el eco se apaga solo.
+  - 🔁 **Repetir** (beat repeat): repite el último trozo con sonido en 1/4, 1/8, 1/16 o 1/32; hacia arriba, más cortito. Usa un AudioWorklet; sin él, avisa de que no está disponible.
+  - El tempo es el del looper, o el del click (⏱) si aún no hay ritmo.
+- Cadena: canales → suma → Repetir → Filtro (+ envío al Eco) → Máster → limitador suave. El click del metrónomo va directo a la salida, sin mezclador ni efectos.
+- La mezcla se guarda en la sesión y en `localStorage` (`pp_mix`); 🏠 «Empezar de nuevo» la pone a 100 % y apaga los efectos.
+
+## Rendimiento (v1.14)
+- Los golpes de los pads y el pulso del tempo se animan con la Web Animations API. Antes se quitaba una clase, se forzaba un recálculo de la página (`offsetWidth`) y se volvía a poner, en cada golpe.
+- El cabezal del looper se mueve con `transform` (el navegador no recoloca la página en cada fotograma) y el contador de grabación solo se reescribe cuando cambia.
+- Las mini-ondas de los pads solo se redibujan si cambia su sonido o sus puntos.
+- Piano del teclado: los parciales se calculan girando fasores en vez de llamar a `Math.sin`/`Math.exp` en cada muestra. Es de 3 a 10 veces más rápido y la señal es idéntica (diferencia de −100 dB).
+- Las teclas visibles se preparan una a una en ratos libres (`requestIdleCallback`), empezando por el centro, en vez de todas de golpe. En un móvil modesto simulado (CPU ×4 más lenta), elegir el piano bloqueaba la app 5,3 s; ahora el bloqueo más largo es de 90 ms.
+- El procesador de Repetir solo existe con el mezclador abierto (o con Repetir 📌). Los medidores solo se leen con el mezclador a la vista.
+- `contain` en los pads, `will-change` en lo que se anima y sin estrellas flotantes si el sistema pide «reducir movimiento».
+
 ## Arquitectura
 Un solo archivo `index.html` (HTML + CSS + JS, iconos SVG generados en código), `manifest.webmanifest` y `sw.js`
 (caché `poppads-v1.13`).
@@ -30,6 +50,7 @@ Un solo archivo `index.html` (HTML + CSS + JS, iconos SVG generados en código),
   resultado parcial, cronología y últimas 300 líneas de consola.
 
 ## Historial
+- **v1.14** (18-11-2026): mezclador 🎚️ con canales A, B, teclado y máster (fader, medidor, silencio, solo) y 3 pads de efectos táctiles (Filtro, Eco, Repetir); mejoras de rendimiento (teclado sin bloqueos, animaciones sin recálculos de página).
 - **v1.13** (18-11-2026): banco C con teclado y 4 sonidos; informe de error .txt; botón de informe en ⚙️.
 - v1.12 y anteriores: sampler de voz, bancos A/B, looper de 4 pistas, editor de pads, ajuste de latencia.
 
@@ -40,6 +61,8 @@ Un solo archivo `index.html` (HTML + CSS + JS, iconos SVG generados en código),
 - Probar en navegador headless antes de entregar (teclado, looper con teclado, recarga de sesión, informe).
 
 ## Límites conocidos
+- Mezclador y efectos probados en Chrome sin pantalla, midiendo el audio de salida; no se han probado en un móvil real ni en Safari de iPhone (Repetir necesita AudioWorklet, disponible en iOS 14.5 o posterior).
+- Los efectos afectan a lo que suena en directo. Pop!Pads no exporta audio, así que no hay nada más a lo que aplicarlos.
 - El teclado toca notas sueltas que se apagan solas (no se mantienen mientras se pulsa la tecla).
 - Las notas del teclado grabadas en el looper suenan con el sonido con el que se tocaron; las octavas cambian solo lo que se toca después.
 - En Android/escritorio funciona igual (misma web empaquetada); no probado en un móvil real en esta versión.
