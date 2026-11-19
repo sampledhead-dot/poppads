@@ -203,6 +203,24 @@ body:not(.mix):not([data-b="2"]) #looper{flex:1 1 auto}
 #nyes{background:#ff4d6d}#nno{background:#22c55e}
 #bnew{min-width:40px!important;padding:0!important}
 .ed-toggle{font-size:19px}
+
+/* v1.17: mis canciones y grabar lo que suena */
+#songs{position:fixed;inset:0;z-index:31;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:12px}
+#songs.on{display:flex}
+#songs .box{width:100%;max-width:420px;max-height:calc(100% - 20px);overflow:auto;border-radius:26px;border:4px solid #fff;background:linear-gradient(160deg,#06d6a0,#118ab2 60%,#3a0ca3);padding:16px;display:flex;flex-direction:column;gap:10px;text-align:center}
+#songs h3{margin:0;font-size:24px}#songs h4{margin:6px 0 0;font-size:17px;text-align:left}#songs p{margin:0;font-size:14px;font-weight:700;opacity:.95}
+#songs .wb{min-height:56px;border-radius:20px;border:4px solid #fff;font-size:17px;box-shadow:0 5px 0 rgba(0,0,0,.3)}
+#songs .wb{background:rgba(0,0,0,.28);color:#fff}#songs .wb.rec{background:#ff4d6d}#songs .wb.go{background:#ffd60a;color:#3a0ca3}
+#songs .it{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border:3px solid rgba(255,255,255,.5);border-radius:18px;padding:6px 8px;text-align:left}
+#songs .it .em{font-size:30px;line-height:1}#songs .it .nm{flex:1;min-width:0;font-weight:800;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#songs .it .nm small{display:block;font-weight:700;opacity:.8;font-size:11px}
+#songs .it button{height:44px;min-width:44px;border-radius:14px;border:3px solid #fff;background:rgba(0,0,0,.25);font-size:20px;padding:0 6px;flex:none}
+#songs .it button.warn{background:#ff4d6d;font-size:13px}
+#recbar{position:fixed;left:50%;top:calc(var(--sat,0px) + 8px);transform:translateX(-50%);z-index:29;display:none;align-items:center;gap:10px;background:#ff4d6d;border:4px solid #fff;border-radius:999px;padding:6px 8px 6px 14px;font-weight:800;font-size:16px;box-shadow:0 5px 0 rgba(0,0,0,.3)}
+#recbar.on{display:flex}#recbar .dot{width:14px;height:14px;border-radius:50%;background:#fff;animation:rb 1s infinite}
+@keyframes rb{50%{opacity:.25}}
+#recbar button{height:40px;border-radius:999px;border:3px solid #fff;background:#3a0ca3;font-size:15px;padding:0 14px}
+body.recording #bsong{background:#ff4d6d;border-color:#fff}
 #cfg{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px}
 #cfg.on{display:flex}
 #cfg .box{width:100%;max-width:380px;border-radius:26px;border:4px solid #fff;background:linear-gradient(160deg,#3a0ca3,#7209b7);padding:16px;display:flex;flex-direction:column;gap:12px;text-align:center}
@@ -237,6 +255,7 @@ body:not(.mix):not([data-b="2"]) #looper{flex:1 1 auto}
   <button class="bk" data-b="2">C 🎹</button>
   <button class="ed-toggle" id="bmix" aria-label="Mezclador">🎚️</button>
   <button class="ed-toggle" id="etog">✏️</button>
+  <button class="ed-toggle" id="bsong" aria-label="Mis canciones: guardar, grabar y compartir">💾</button>
   <button class="ed-toggle" id="bnew">🏠</button>
  </header>
  <div id="pads"></div>
@@ -305,14 +324,18 @@ body:not(.mix):not([data-b="2"]) #looper{flex:1 1 auto}
  <div class="by">by SampledHead</div>
  <button id="s1">🎤 ¡EMPEZAR!</button>
  <button id="s2">🥁 Probar con sonidos</button>
- <p style="opacity:.7;font-size:12px" id="ver">v1.16</p>
+ <button id="s3">💾 Mis canciones</button>
+ <p style="opacity:.7;font-size:12px" id="ver">v1.17</p>
  <p>Mantén un pad vacío pulsado para grabar tu voz. ¡Suéltalo para parar!</p>
 </div>
+<div id="songs"><div class="box" id="songsb"></div></div>
+<div id="recbar" role="status"><span class="dot"></span><span id="rect">Grabando 0:00</span><button id="recstop">■ Parar</button></div>
+<input type="file" id="songin" accept=".poppads,application/octet-stream" hidden>
 <div id="toast"></div>
 
 <script>
 /* ---------- informe de error (.txt) ---------- */
-const APP_VERSION='1.16';
+const APP_VERSION='1.17';
 const RPT={log:[],steps:[],stage:'inicio',err:null,file:null,auto:0};
 (function(){for(const k of ['log','info','warn','error']){const o=console[k].bind(console);console[k]=(...a)=>{try{RPT.log.push(new Date().toISOString().slice(11,23)+' ['+k+'] '+a.map(v=>typeof v==='string'?v:(v&&v.stack)||(()=>{try{return JSON.stringify(v)}catch(e){return String(v)}})()).join(' '));if(RPT.log.length>300)RPT.log.shift()}catch(e){}o(...a)}}})();
 function step(m){RPT.stage=m;RPT.steps.push(new Date().toISOString().slice(11,19)+'  '+m);if(RPT.steps.length>200)RPT.steps.shift();console.info('[paso] '+m)}
@@ -1288,19 +1311,148 @@ step('App iniciada v'+APP_VERSION);
 loadSession();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
-<script src="sh-core.js"></script>
-<script>/* 1.16: conexión con todas las apps (sh-core): recibe palabras o golpes cortados en el Extractor y envía tus pads */
+<script>
+/* ---------- v1.17: Mis canciones, grabar lo que suena, guardar y compartir ----------
+   Canciones: copia completa de la sesión (sonidos, ritmo, mezcla) en IndexedDB «poppads-canciones».
+   Grabar: todo lo que sale por el máster (con efectos, sin el click) a un WAV. Se quedan las 20 últimas grabaciones.
+   Archivo .poppads: «PPAD1» + largo del JSON + JSON + audio float32 (para pasar una canción a otro móvil u ordenador). */
 (function(){
-  if(!window.SH)return;
-  SH.ui.dock({me:'poppads',pos:'right',bottom:84,kinds:['pad'],sendHint:'Manda los pads con sonido a otra app',
-    provide:async()=>{const out=pads.map((p,i)=>p.buf?{name:'Pop!Pads '+(i+1),kind:'pad',audio:p.buf}:null).filter(Boolean);return out.length?out:null},
-    accept:async list=>{let n=0;if(typeof mkCtx==='function')mkCtx();
-      for(const it of list){if(!it.wav)continue;const i=pads.findIndex(p=>!p.buf);if(i<0)break;
-        try{const b=await ctx.decodeAudioData(it.wav.slice(0));const p=pads[i];p.buf=b;p.s=0;p.e=1;n++}catch(e){}}
-      if(n){renderBank();scheduleSave();toast(n+' sonido'+(n===1?'':'s')+' recibido'+(n===1?'':'s'))}
-      else toast('No hay pads libres');
-      return n>0}});
+const EMO=['🐶','🐱','🦊','🐼','🐸','🦁','🐯','🐨','🐵','🦄','🐙','🐢','🐝','🦖','🐳','🦋'];
+const SG={db:null,rec:null,recT:null};
+function sdb(){return new Promise((ok,ko)=>{if(SG.db)return ok(SG.db);const r=indexedDB.open('poppads-canciones',1);
+ r.onupgradeneeded=()=>{r.result.createObjectStore('songs',{keyPath:'id'});r.result.createObjectStore('recs',{keyPath:'id'})};
+ r.onsuccess=()=>{SG.db=r.result;ok(SG.db)};r.onerror=()=>ko(r.error)})}
+function st(name,mode,fn){return sdb().then(db=>new Promise((ok,ko)=>{const tx=db.transaction(name,mode),o=tx.objectStore(name);const q=fn(o);tx.oncomplete=()=>ok(q&&q.result);tx.onerror=()=>ko(tx.error)}))}
+const all=name=>st(name,'readonly',o=>o.getAll()).then(l=>(l||[]).sort((a,b)=>b.ts-a.ts));
+const fmtT=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+const fmtD=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short'})+' · '+new Date(t).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+async function share(blob,name,title){   // compartir (móvil) o, si no se puede, guardar el archivo
+ try{const f=new File([blob],name,{type:blob.type||'application/octet-stream'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title});return}}catch(e){if(e&&e.name==='AbortError')return}
+ dl(blob,name);toast('Guardado en Descargas 📥',2600)}
+const hasSomething=()=>pads.some(p=>p.buf&&!p.kb)||LP.tr.some(t=>t.length);
+
+/* --- canciones --- */
+async function snapshot(){
+ await saveNow();
+ const out={};await kv('readonly',o=>{const r=o.openCursor();r.onsuccess=()=>{const c=r.result;if(c){out[c.key]=c.value;c.continue()}};return null});
+ return out;
+}
+async function saveSong(){
+ if(!SES.live||!hasSomething()){toast('Primero haz algo de música 🎵',2600);return}
+ const n=(await all('songs')).length+1,em=EMO[Math.floor(Math.random()*EMO.length)];
+ const data=await snapshot();
+ await st('songs','readwrite',o=>o.put({id:Date.now().toString(36),name:'Canción '+n,em,ts:Date.now(),data}));
+ step('Canción guardada');toast(em+' ¡Canción guardada!',2600);render();
+}
+async function resetAll(){
+ if(typeof closeEd==='function'&&ed)closeEd();
+ LP.play=false;LP.od=false;LP.es=null;showBar();
+ pads.forEach(p=>{if(p.kb)return;p.buf=null;p.s=0;p.e=1;p.pitch=0;p.vol=1;p.undo=null;p.bufDirty=false});
+ LP.tr=[[],[],[],[]];LP.L=0;LP.n=0;LP.bpm=0;LP.st='idle';LP.sw=0;LP.grid=4;LP.mute=[0,0,0,0];LP.sel=0;LP.takeK=null;
+ UND.length=0;MT.on=false;editMode=false;document.body.classList.remove('edit');
+ Object.assign(MIX,JSON.parse(JSON.stringify(MIXD)));FX.st.forEach(S=>{S.down=false;S.pin=false;S.id=null;S.tr=[]});$$('.fxt .pin').forEach(b=>b.classList.remove('on'));mixApply();fxSend();setMix(false);
+ await wipeSession();
+}
+async function openSong(song){
+ step('Abrir canción '+song.name);
+ await resetAll();
+ await kv('readwrite',o=>{for(const k in song.data)o.put(song.data[k],k);return null});
+ const ok=await loadSession();
+ if(!ok){$('#start').style.display='flex';toast('Esta canción está vacía 🤔',2600)}
+ else toast(song.em+' '+song.name,2200);
+ close();
+}
+/* --- archivo .poppads --- */
+function packSong(song){
+ const blobs=[],meta={app:'poppads',v:1,name:song.name,em:song.em,ts:song.ts,keys:{}};let off=0;
+ for(const k in song.data){const v=song.data[k];
+  if(v&&v.ch){meta.keys[k]={sr:v.sr,ch:v.ch.map(c=>{const r={o:off,n:c.length};off+=c.length*4;blobs.push(new Uint8Array(c.buffer,c.byteOffset,c.byteLength));return r})}}
+  else meta.keys[k]={json:v}}
+ const js=new TextEncoder().encode(JSON.stringify(meta)),hd=new Uint8Array(9);hd.set([80,80,65,68,49]);new DataView(hd.buffer).setUint32(5,js.length,true);
+ return new Blob([hd,js,...blobs],{type:'application/octet-stream'});
+}
+async function unpackSong(file){
+ const ab=await file.arrayBuffer(),u=new Uint8Array(ab);
+ if(String.fromCharCode(...u.slice(0,5))!=='PPAD1')throw new Error('No es una canción de Pop!Pads');
+ const n=new DataView(ab).getUint32(5,true),meta=JSON.parse(new TextDecoder().decode(u.slice(9,9+n))),base=9+n,data={};
+ for(const k in meta.keys){const m=meta.keys[k];if(m.ch)data[k]={sr:m.sr,ch:m.ch.map(c=>new Float32Array(ab.slice(base+c.o,base+c.o+c.n*4)))};else data[k]=m.json}
+ return {id:Date.now().toString(36),name:meta.name||'Canción',em:meta.em||'🎵',ts:Date.now(),data};
+}
+$('#songin').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{const s=await unpackSong(f);await st('songs','readwrite',o=>o.put(s));toast(s.em+' ¡Canción añadida!',2600);render()}catch(err){toast('😕 Ese archivo no es una canción de Pop!Pads',3500)}};
+
+/* --- grabar lo que suena --- */
+function recStart(){
+ mkCtx();try{ctx.resume()}catch(_){}
+ if(!clipN){toast('No puedo grabar ahora 😕');return}
+ const sp=ctx.createScriptProcessor(4096,2,2),L=[],R=[],z=ctx.createGain();z.gain.value=0;
+ sp.onaudioprocess=e=>{L.push(new Float32Array(e.inputBuffer.getChannelData(0)));R.push(new Float32Array(e.inputBuffer.getChannelData(e.inputBuffer.numberOfChannels>1?1:0)))};
+ clipN.connect(sp);sp.connect(z);z.connect(ctx.destination);
+ SG.rec={sp,z,L,R,t0:Date.now(),sr:ctx.sampleRate};document.body.classList.add('recording');$('#recbar').classList.add('on');
+ SG.recT=setInterval(()=>{const t=(Date.now()-SG.rec.t0)/1000;$('#rect').textContent='Grabando '+fmtT(t);if(t>600)recStop()},250);
+ step('Grabar lo que suena');toast('🔴 ¡Grabando! Toca tu música',2400);close();
+}
+function wav16(L,R,sr){const n=L.length,b=new ArrayBuffer(44+n*4),v=new DataView(b),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+ w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,2,true);v.setUint32(24,sr,true);v.setUint32(28,sr*4,true);v.setUint16(32,4,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*4,true);
+ let o=44;for(let i=0;i<n;i++){v.setInt16(o,Math.max(-1,Math.min(1,L[i]))*32767,true);v.setInt16(o+2,Math.max(-1,Math.min(1,R[i]))*32767,true);o+=4}return b}
+async function recStop(){
+ const r=SG.rec;if(!r)return;SG.rec=null;clearInterval(SG.recT);
+ try{clipN.disconnect(r.sp)}catch(_){}try{r.sp.disconnect();r.z.disconnect()}catch(_){}
+ document.body.classList.remove('recording');$('#recbar').classList.remove('on');
+ const n=r.L.reduce((a,c)=>a+c.length,0);if(n<r.sr*0.5){toast('Muy cortito: no lo guardo 🙈',2600);return}
+ const L=new Float32Array(n),R=new Float32Array(n);let o=0;r.L.forEach((c,i)=>{L.set(c,o);R.set(r.R[i],o);o+=c.length});
+ let a=0,z=n-1;while(a<z&&Math.abs(L[a])<1e-4&&Math.abs(R[a])<1e-4)a++;while(z>a&&Math.abs(L[z])<1e-4&&Math.abs(R[z])<1e-4)z--;   // sin silencio al principio y al final
+ if(z-a<r.sr*0.3){toast('No ha sonado nada 🤫',2600);return}
+ const w=wav16(L.subarray(a,z+1),R.subarray(a,z+1),r.sr),cnt=(await all('recs')).length+1,em=EMO[Math.floor(Math.random()*EMO.length)];
+ const rec={id:Date.now().toString(36),name:'Grabación '+cnt,em,ts:Date.now(),secs:(z-a)/r.sr,wav:w};
+ await st('recs','readwrite',o=>o.put(rec));
+ const old=(await all('recs')).slice(20);if(old.length)await st('recs','readwrite',o=>{old.forEach(x=>o.delete(x.id));return null});
+ step('Grabación guardada '+rec.secs.toFixed(1)+' s');toast(em+' ¡Grabación guardada!',2400);open(true);
+}
+$('#recstop').onclick=recStop;
+
+/* --- hoja --- */
+let player=null;
+function playRec(rec,btn){
+ if(player){player.pause();const was=player._id;player=null;$$('#songs .pl').forEach(b=>b.textContent='▶');if(was===rec.id)return}
+ player=new Audio(URL.createObjectURL(new Blob([rec.wav],{type:'audio/wav'})));player._id=rec.id;btn.textContent='■';
+ player.onended=()=>{btn.textContent='▶';player=null};player.play().catch(()=>{})}
+function close(){$('#songs').classList.remove('on');if(player){player.pause();player=null}}
+function el(t,c,h){const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+async function render(){
+ const b=$('#songsb');if(!$('#songs').classList.contains('on'))return;b.innerHTML='';
+ b.appendChild(el('h3',null,'💾 Mis canciones'));
+ const live=SES.live&&$('#start').style.display==='none';
+ if(live){const s=el('button','wb go','💾 Guardar mi canción');s.onclick=saveSong;b.appendChild(s)}
+ const r=el('button','wb rec',SG.rec?'■ Parar de grabar':'🔴 Grabar lo que suena');r.onclick=()=>SG.rec?recStop():recStart();if(live||SG.rec)b.appendChild(r);
+ const songs=await all('songs'),recs=await all('recs');
+ b.appendChild(el('h4',null,'🎵 Canciones'));
+ if(!songs.length)b.appendChild(el('p',null,'Aún no hay canciones. ¡Haz un ritmo y toca 💾!'));
+ songs.forEach(sg=>{const it=el('div','it');it.appendChild(el('span','em',sg.em));
+  const nm=el('div','nm',sg.name+'<small>'+fmtD(sg.ts)+'</small>');nm.onclick=()=>{const v=prompt('Nombre de la canción',sg.name);if(v&&v.trim()){sg.name=v.trim().slice(0,40);st('songs','readwrite',o=>o.put(sg)).then(render)}};it.appendChild(nm);
+  const op=el('button',null,'▶');op.title='Abrir';op.onclick=()=>{if(live&&hasSomething())arm(op,'¿Abrir?',()=>openSong(sg));else openSong(sg)};
+  const sh=el('button',null,'📤');sh.title='Guardar o compartir el archivo';sh.onclick=()=>share(packSong(sg),sg.name.replace(/[^\wáéíóúñ -]+/gi,'')+'.poppads','Pop!Pads · '+sg.name);
+  const de=el('button',null,'🗑');de.onclick=()=>arm(de,'¿Borrar?',async()=>{await st('songs','readwrite',o=>o.delete(sg.id));render()});
+  it.append(op,sh,de);b.appendChild(it)});
+ b.appendChild(el('h4',null,'🎤 Grabaciones'));
+ if(!recs.length)b.appendChild(el('p',null,'Toca 🔴 para grabar lo que suena, con efectos y todo.'));
+ recs.forEach(rc=>{const it=el('div','it');it.appendChild(el('span','em',rc.em));
+  const nm=el('div','nm',rc.name+'<small>'+fmtT(rc.secs)+' · '+fmtD(rc.ts)+'</small>');nm.onclick=()=>{const v=prompt('Nombre de la grabación',rc.name);if(v&&v.trim()){rc.name=v.trim().slice(0,40);st('recs','readwrite',o=>o.put(rc)).then(render)}};it.appendChild(nm);
+  const pl=el('button','pl','▶');pl.onclick=()=>playRec(rc,pl);
+  const sh=el('button',null,'📤');sh.title='Guardar o compartir';sh.onclick=()=>share(new Blob([rc.wav],{type:'audio/wav'}),'PopPads - '+rc.name.replace(/[^\wáéíóúñ -]+/gi,'')+'.wav','Pop!Pads · '+rc.name);
+  const de=el('button',null,'🗑');de.onclick=()=>arm(de,'¿Borrar?',async()=>{await st('recs','readwrite',o=>o.delete(rc.id));render()});
+  it.append(pl,sh,de);b.appendChild(it)});
+ const im=el('button','wb','📥 Abrir una canción (.poppads)');im.onclick=()=>$('#songin').click();b.appendChild(im);
+ const ok=el('button','wb','✅ Listo');ok.onclick=close;b.appendChild(ok);
+}
+function open(){$('#songs').classList.add('on');render()}
+$('#bsong').onclick=()=>{step('Mis canciones');open()};
+$('#s3').onclick=()=>{step('Mis canciones (inicio)');open()};
+$('#songs').addEventListener('click',e=>{if(e.target.id==='songs')close()});
+window.PP_SONGS={open,saveSong,recStart,recStop,all,packSong,unpackSong};
 })();
 </script>
 </body>
+
 </html>

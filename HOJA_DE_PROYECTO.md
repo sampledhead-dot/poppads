@@ -1,11 +1,11 @@
 # Pop!Pads — Hoja de proyecto
 
-**Versión actual:** v1.15 (19-11-2026) · https://sampledhead-dot.github.io/poppads/
+**Versión actual:** v1.17 (19-11-2026) · https://sampledhead-dot.github.io/poppads/
 
 ## Descripción
 Sampler y looper para niños, con estética hip hop infantil (iconos con carita, colores vivos, contornos gruesos).
 Se graba la voz manteniendo pulsado un pad vacío; los golpes se graban en un looper de 4 pistas con ajuste a la
-rejilla, swing, metrónomo y deshacer. Disponible en web y en las versiones de Windows, Mac y Android (SH-apps/Releases).
+rejilla, swing, metrónomo y deshacer. Independiente de las demás apps (sin bandeja compartida). Pensada para web y Android.
 
 ## Bancos
 - **A ☀️** y **B 🌙**: 16 pads cada uno (voz grabada, archivo o sonidos de prueba).
@@ -34,6 +34,13 @@ Botón 🎚️ en la cabecera (al tocar A, B o C se vuelve a los pads). Mientras
 - El procesador de Repetir solo existe con el mezclador abierto (o con Repetir 📌). Los medidores solo se leen con el mezclador a la vista.
 - `contain` en los pads, `will-change` en lo que se anima y sin estrellas flotantes si el sistema pide «reducir movimiento».
 
+## Mis canciones y grabaciones (v1.17)
+- Base IndexedDB aparte, `poppads-canciones`: almacén `songs` (copia completa de la sesión: el `meta` y los `b<i>` de `poppads`) y `recs` (WAV 16 bits estéreo).
+- Abrir una canción = vaciar la sesión (como 🏠) + copiar sus datos a `poppads` + `loadSession()`. Si hay algo hecho, «¿Abrir?» pide un segundo toque.
+- Archivo `.poppads`: `PPAD1` + u32 largo del JSON + JSON (nombre, animalito, claves) + audio float32 seguido.
+- Grabar: `ScriptProcessor` estéreo colgado de la salida del limitador (`clipN`); máximo 10 min.
+- 📤 usa «Compartir» del sistema si puede enviar archivos (Android, iPhone); si no, descarga el archivo.
+
 ## Arquitectura
 Un solo archivo `index.html` (HTML + CSS + JS, iconos SVG generados en código), `manifest.webmanifest` y `sw.js`
 (caché `poppads-v1.15`).
@@ -56,7 +63,8 @@ Un solo archivo `index.html` (HTML + CSS + JS, iconos SVG generados en código),
 - Pads casi cuadrados: `#pads` tiene altura máxima `(ancho − 20 px) / 0,92`; lo que sobra en móviles alargados va a las pistas del looper (de 30 a 50 px de alto, más fáciles de tocar).
 
 ## Historial
-- **1.16** (19-11-2026): conexión con todas las apps de Sampled Head (sh-core): botón «⇄ Apps» con «Recibido» y «Enviar a…»; en Windows/Mac usa la carpeta Documentos/SampledHead. Lo recibido va a los pads libres; envía los pads con sonido.
+- **v1.17** (19-11-2026): botón 💾 «Mis canciones» (también en la pantalla de inicio): guardar varias canciones (sonidos, ritmo y mezcla) con un animalito y nombre, abrirlas, cambiarles el nombre y borrarlas; 🔴 «Grabar lo que suena» (todo lo que sale por el máster con efectos, sin el click; barra roja con el tiempo y ■ Parar; se quita el silencio del principio y del final; se guardan las 20 últimas); 📤 compartir (móvil) o guardar el WAV y la canción (.poppads) y 📥 abrir un .poppads de otro móvil u ordenador. Se quita la conexión con las otras apps (1.16): Pop!Pads es independiente.
+- 1.16 (19-11-2026, retirada en 1.17): conexión con las otras apps de Sampled Head.
 - **v1.15** (19-11-2026): bajo monofónico que suena mientras se pulsa (también en el looper); mezclador más bajo por defecto (70 % / máster 80 %) para que no sature; la cabecera ya no queda bajo la barra de estado; pads casi cuadrados y pistas del looper más altas.
 - **v1.14** (18-11-2026): mezclador 🎚️ con canales A, B, teclado y máster (fader, medidor, silencio, solo) y 3 pads de efectos táctiles (Filtro, Eco, Repetir); mejoras de rendimiento (teclado sin bloqueos, animaciones sin recálculos de página).
 - **v1.13** (18-11-2026): banco C con teclado y 4 sonidos; informe de error .txt; botón de informe en ⚙️.
