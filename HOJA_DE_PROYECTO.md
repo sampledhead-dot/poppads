@@ -56,6 +56,7 @@ Un solo archivo `index.html` (HTML + CSS + JS, iconos SVG generados en código),
 - Pads casi cuadrados: `#pads` tiene altura máxima `(ancho − 20 px) / 0,92`; lo que sobra en móviles alargados va a las pistas del looper (de 30 a 50 px de alto, más fáciles de tocar).
 
 ## Historial
+- **1.16** (19-11-2026): conexión con todas las apps de Sampled Head (sh-core): botón «⇄ Apps» con «Recibido» y «Enviar a…»; en Windows/Mac usa la carpeta Documentos/SampledHead. Lo recibido va a los pads libres; envía los pads con sonido.
 - **v1.15** (19-11-2026): bajo monofónico que suena mientras se pulsa (también en el looper); mezclador más bajo por defecto (70 % / máster 80 %) para que no sature; la cabecera ya no queda bajo la barra de estado; pads casi cuadrados y pistas del looper más altas.
 - **v1.14** (18-11-2026): mezclador 🎚️ con canales A, B, teclado y máster (fader, medidor, silencio, solo) y 3 pads de efectos táctiles (Filtro, Eco, Repetir); mejoras de rendimiento (teclado sin bloqueos, animaciones sin recálculos de página).
 - **v1.13** (18-11-2026): banco C con teclado y 4 sonidos; informe de error .txt; botón de informe en ⚙️.

@@ -1,5 +1,5 @@
-const C='poppads-v1.15';
-const F=['./','index.html','manifest.webmanifest'];
+const C='poppads-v1.16';
+const F=['./','index.html','manifest.webmanifest','sh-core.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(F)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==C&&n.startsWith('poppads-')).map(n=>caches.delete(n)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;

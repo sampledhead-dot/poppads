@@ -305,14 +305,14 @@ body:not(.mix):not([data-b="2"]) #looper{flex:1 1 auto}
  <div class="by">by SampledHead</div>
  <button id="s1">🎤 ¡EMPEZAR!</button>
  <button id="s2">🥁 Probar con sonidos</button>
- <p style="opacity:.7;font-size:12px" id="ver">v1.15</p>
+ <p style="opacity:.7;font-size:12px" id="ver">v1.16</p>
  <p>Mantén un pad vacío pulsado para grabar tu voz. ¡Suéltalo para parar!</p>
 </div>
 <div id="toast"></div>
 
 <script>
 /* ---------- informe de error (.txt) ---------- */
-const APP_VERSION='1.15';
+const APP_VERSION='1.16';
 const RPT={log:[],steps:[],stage:'inicio',err:null,file:null,auto:0};
 (function(){for(const k of ['log','info','warn','error']){const o=console[k].bind(console);console[k]=(...a)=>{try{RPT.log.push(new Date().toISOString().slice(11,23)+' ['+k+'] '+a.map(v=>typeof v==='string'?v:(v&&v.stack)||(()=>{try{return JSON.stringify(v)}catch(e){return String(v)}})()).join(' '));if(RPT.log.length>300)RPT.log.shift()}catch(e){}o(...a)}}})();
 function step(m){RPT.stage=m;RPT.steps.push(new Date().toISOString().slice(11,19)+'  '+m);if(RPT.steps.length>200)RPT.steps.shift();console.info('[paso] '+m)}
@@ -1287,6 +1287,20 @@ $('#s2').onclick=async()=>{step('Probar con sonidos');await init(false);fillDemo
 step('App iniciada v'+APP_VERSION);
 loadSession();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+<script src="sh-core.js"></script>
+<script>/* 1.16: conexión con todas las apps (sh-core): recibe palabras o golpes cortados en el Extractor y envía tus pads */
+(function(){
+  if(!window.SH)return;
+  SH.ui.dock({me:'poppads',pos:'right',bottom:84,kinds:['pad'],sendHint:'Manda los pads con sonido a otra app',
+    provide:async()=>{const out=pads.map((p,i)=>p.buf?{name:'Pop!Pads '+(i+1),kind:'pad',audio:p.buf}:null).filter(Boolean);return out.length?out:null},
+    accept:async list=>{let n=0;if(typeof mkCtx==='function')mkCtx();
+      for(const it of list){if(!it.wav)continue;const i=pads.findIndex(p=>!p.buf);if(i<0)break;
+        try{const b=await ctx.decodeAudioData(it.wav.slice(0));const p=pads[i];p.buf=b;p.s=0;p.e=1;n++}catch(e){}}
+      if(n){renderBank();scheduleSave();toast(n+' sonido'+(n===1?'':'s')+' recibido'+(n===1?'':'s'))}
+      else toast('No hay pads libres');
+      return n>0}});
+})();
 </script>
 </body>
 </html>
